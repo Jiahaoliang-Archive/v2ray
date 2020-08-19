@@ -18,4 +18,4 @@ This fork removes the ban list of Falungong related sites are undesired by the o
 请考虑 [资助 V2Ray 发展](https://www.v2ray.com/chapter_00/02_donate.html)
 
 ## 更多 V2Ray 教程文章
-https://github.com/233boy/v2ray/wiki
+https://github.com/jiahaoliang/v2ray/wiki
