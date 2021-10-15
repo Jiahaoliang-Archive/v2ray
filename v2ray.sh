@@ -10,7 +10,7 @@ none='\e[0m'
 # Root
 [[ $(id -u) != 0 ]] && echo -e " 哎呀……请使用 ${red}root ${none}用户运行 ${yellow}~(^_^) ${none}" && exit 1
 
-_version="v3.42"
+_version="v3.45"
 
 cmd="apt-get"
 
@@ -111,10 +111,6 @@ fi
 
 _load transport.sh
 ciphers=(
-	aes-128-cfb
-	aes-256-cfb
-	chacha20
-	chacha20-ietf
 	aes-128-gcm
 	aes-256-gcm
 	chacha20-ietf-poly1305
@@ -143,6 +139,10 @@ create_vmess_URL_config() {
 				"path": "$_path",
 				"tls": "tls"
 			}
+		EOF
+	elif [[ $v2ray_transport == 33 ]]; then
+		cat >/etc/v2ray/vmess_qr.json <<-EOF
+			vless://${v2ray_id}@${domain}:443?encryption=none&security=tls&type=ws&host=${domain}&path=${_path}#233v2_${domain}
 		EOF
 	else
 		[[ -z $ip ]] && get_ip
@@ -409,17 +409,17 @@ shadowsocks_password_config() {
 shadowsocks_ciphers_config() {
 
 	while :; do
-		echo -e "请选择 "$yellow"Shadowsocks"$none" 加密协议 [${magenta}1-7$none]"
+		echo -e "请选择 "$yellow"Shadowsocks"$none" 加密协议 [${magenta}1-3$none]"
 		for ((i = 1; i <= ${#ciphers[*]}; i++)); do
 			ciphers_show="${ciphers[$i - 1]}"
 			echo
 			echo -e "$yellow $i. $none${ciphers_show}"
 		done
 		echo
-		read -p "$(echo -e "(默认加密协议: ${cyan}${ciphers[6]}$none)"):" ssciphers_opt
-		[ -z "$ssciphers_opt" ] && ssciphers_opt=7
+		read -p "$(echo -e "(默认加密协议: ${cyan}${ciphers[1]}$none)"):" ssciphers_opt
+		[ -z "$ssciphers_opt" ] && ssciphers_opt=2
 		case $ssciphers_opt in
-		[1-7])
+		[1-3])
 			new_ssciphers=${ciphers[$ssciphers_opt - 1]}
 			echo
 			echo
@@ -554,7 +554,7 @@ change_shadowsocks_ciphers() {
 		read -p "$(echo -e "(当前加密协议: ${cyan}${ssciphers}$none)"):" ssciphers_opt
 		[ -z "$ssciphers_opt" ] && error && continue
 		case $ssciphers_opt in
-		[1-7])
+		[1-3])
 			new_ssciphers=${ciphers[$ssciphers_opt - 1]}
 			if [[ $new_ssciphers == $ssciphers ]]; then
 				echo
@@ -2268,7 +2268,11 @@ get_v2ray_config_qr_link() {
 }
 get_v2ray_vmess_URL_link() {
 	create_vmess_URL_config
-	local vmess="vmess://$(cat /etc/v2ray/vmess_qr.json | base64 -w 0)"
+	if [[ $v2ray_transport == 33 ]]; then
+		local vmess="$(cat /etc/v2ray/vmess_qr.json)"
+	else
+		local vmess="vmess://$(cat /etc/v2ray/vmess_qr.json | base64 -w 0)"
+	fi
 	echo
 	echo "---------- V2Ray vmess URL / V2RayNG v0.4.1+ / V2RayN v2.1+ / 仅适合部分客户端 -------------"
 	echo
@@ -2708,12 +2712,6 @@ L | infolink)
 	get_v2ray_config_info_link
 	;;
 q | qr)
-	if [[ $v2ray_transport == 33 ]]; then
-		echo
-		echo ' V2RAY VLESS 协议相关暂不支持生成 ....'
-		echo
-		exit
-	fi
 	get_v2ray_config_qr_link
 	;;
 s | ss)
@@ -2781,12 +2779,6 @@ log)
 	view_v2ray_log
 	;;
 url | URL)
-	if [[ $v2ray_transport == 33 ]]; then
-		echo
-		echo ' V2RAY VLESS 协议相关暂不支持生成 URL ....'
-		echo
-		exit
-	fi
 	get_v2ray_vmess_URL_link
 	;;
 u | update)
